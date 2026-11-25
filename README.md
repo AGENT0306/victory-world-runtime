@@ -3,7 +3,7 @@
 ## This branch: victory-amd + a DirectStorage read fix
 
 A fork of [myokex/victory-amd](https://github.com/myokex/victory-amd) at `070df42`
-with one change on top (branch `fix-dstorage-guard-race`):
+with one change on top (on this fork's `victory-amd` branch, and on `fix-dstorage-guard-race`):
 
 - **Kernel reads into title memory are read beside and copied in.** With the guard
   over all the views of a page (on by default in `070df42`), a raw DirectStorage
@@ -25,23 +25,30 @@ translated on your machine from your own copy of the game.
 1. Install Git, Visual Studio Build Tools (MSVC C++ workload and a Windows 10/11 SDK),
    [rustup](https://rustup.rs), and a current GPU driver. The pinned Rust toolchain is
    installed by itself on the first build.
-2. Get this branch and set up the config:
+2. Get the code and set up the config:
 
    ```powershell
-   git clone -b fix-dstorage-guard-race <this fork's URL> victory-amd
+   git clone https://github.com/JoshuaO22/victory-amd
    cd victory-amd
    copy victory.example.toml victory.toml   # set game_dir to your own dump, outside the repo
    cargo test --workspace                   # optional; needs no game data
    cargo build --profile diag -p victory --features diagnostics
    ```
 
-3. Optional, about 4 minutes: translate the shaders ahead of time, so the world's first
-   minutes are not spent translating. Use the same build as the runs (the cache key
+3. **Recommended, about 4 minutes: translate the shaders ahead of time.** Without it,
+   each shader is translated the first time the title uses it, and what it draws is
+   left out until then: the opening cutscene and the world's first minutes show missing
+   objects and effects, and run slower. With it, every shader is ready from the first
+   frame. The translations are made on your machine from your own copy of the game, and
+   are kept in the cache for later runs. Use the same build as the runs (the cache key
    includes it) and no shader-related `VICTORY_*` switches:
 
    ```powershell
    target\diag\victory.exe warm
    ```
+
+   Run it again after updating this repository: a change to the translator makes the
+   cached translations stale, and they are made again.
 
 4. Run the title with a fresh data folder and a log:
 
