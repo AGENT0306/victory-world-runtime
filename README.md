@@ -1,5 +1,69 @@
 # VIctory fork (work in progress)
 
+## This branch: victory-amd + a DirectStorage read fix
+
+A fork of [myokex/victory-amd](https://github.com/myokex/victory-amd) at `070df42`
+with one change on top (branch `fix-dstorage-guard-race`):
+
+- **Kernel reads into title memory are read beside and copied in.** With the guard
+  over all the views of a page (on by default in `070df42`), a raw DirectStorage
+  request could fail with `ERROR_INVALID_USER_BUFFER` (`0x800706f8`) and the title
+  stopped itself seconds after the world's first frame: 2 runs out of 2. Those reads
+  now land in a buffer and are copied in from user mode, where the guard takes the
+  write; `fread` does the same. With the fix and the guard on, a run went 5.5 minutes
+  past the world's first frame without a failed request.
+
+Tested on one machine only: Windows 11, Radeon RX 7800 XT 16 GB (driver
+32.0.32015.7029), Ryzen 7 7700X, 32 GB RAM, Series X profile. Other GPUs,
+NVIDIA's especially, may behave differently.
+
+**No game files, code or assets are here, and none are shared.** Shaders are
+translated on your machine from your own copy of the game.
+
+### Reproducing the check run
+
+1. Install Git, Visual Studio Build Tools (MSVC C++ workload and a Windows 10/11 SDK),
+   [rustup](https://rustup.rs), and a current GPU driver. The pinned Rust toolchain is
+   installed by itself on the first build.
+2. Get this branch and set up the config:
+
+   ```powershell
+   git clone -b fix-dstorage-guard-race <this fork's URL> victory-amd
+   cd victory-amd
+   copy victory.example.toml victory.toml   # set game_dir to your own dump, outside the repo
+   cargo test --workspace                   # optional; needs no game data
+   cargo build --profile diag -p victory --features diagnostics
+   ```
+
+3. Optional, about 4 minutes: translate the shaders ahead of time, so the world's first
+   minutes are not spent translating. Use the same build as the runs (the cache key
+   includes it) and no shader-related `VICTORY_*` switches:
+
+   ```powershell
+   target\diag\victory.exe warm
+   ```
+
+4. Run the title with a fresh data folder and a log:
+
+   ```powershell
+   $env:VICTORY_LOG = 'info'
+   $env:VICTORY_DATA_DIR = 'D:\victory-data\check-1'   # any new folder outside the repo
+   Start-Process target\diag\victory.exe -NoNewWindow -Wait -RedirectStandardError check-1.log `
+     -ArgumentList 'run', '"<game dir>\<the title''s exe>"', '--execute', '--console', 'series-x'
+   ```
+
+   Go through the first-time setup and legal screens with a controller; they do not
+   advance by themselves. The test window is the first minutes after the story's world
+   starts loading. Let it run about 7 minutes, then close it.
+5. Passed if `VICTORY_DATA_DIR\<title id>\crashes.log` does not exist and the log has no
+   `dstorage: request failed` line. The log names the world's start in a line with
+   `the first frame of 500 draws or more`. Without the fix, the same run stops within
+   about 25 seconds of that line.
+
+To repeat it without a controller: copy `saves` and `storage` from the data folder of a run
+stopped before the first autosave into a new data folder. Setup and legal screens are then
+done, and the story starts from the beginning again.
+
 ## victory-amd
 
 This copy is a fork of
