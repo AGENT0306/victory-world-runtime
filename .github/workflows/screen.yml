@@ -1,8 +1,8 @@
 name: Screen
 
 # The first screen for inherited code: a pull request that touches something which must be read before anything is
-# built fails this check and lists what it touched. The failure is a flag, not a verdict: a maintainer reads the
-# diff, then re-runs the check once satisfied. Nothing from the pull request is executed: this workflow reads the
+# built fails this check and lists what it touched. The failure is a flag, not a verdict: it stays red, and a
+# maintainer reads the whole diff before merging. Nothing from the pull request is executed: this workflow reads the
 # base and head trees with `git diff --name-status` and `--numstat` only.
 
 on:
