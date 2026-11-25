@@ -32,5 +32,10 @@ jobs:
       - name: Clippy, diagnostics build
         run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
       # Includes xtask's repository_passes_policy, the asset-policy check.
+      # The runner has no graphics card. Tests that reach the software adapter report themselves ignored, with a
+      # printed reason, when VICTORY_TESTS_ALLOW_SOFTWARE_SKIP=1 (set here and nowhere else): a desk without the
+      # variable still fails loudly on WARP, and a real card still runs every test.
       - name: Tests
+        env:
+          VICTORY_TESTS_ALLOW_SOFTWARE_SKIP: "1"
         run: cargo test --workspace --locked
